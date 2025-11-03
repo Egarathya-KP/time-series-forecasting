@@ -1,47 +1,52 @@
 import os
 import sys
 import pandas as pd
-from datetime import datetime
+
+# Add src folder to path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+
+from src.data_loader import load_dataset
 from src.arima_model import train_arima
 from src.sarima_model import train_sarima
 from src.visualization import plot_forecasts
-from src.data_loader import load_dataset
 from src.evaluation import evaluate_models
 
-# Ensure root folder is in system path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
+# ==========================
 # Load dataset
-data_path = os.path.join("data", "dataset.csv")
-data = load_dataset(data_path)
-
-# Split train-test
-train_size = int(len(data) * 0.8)
-train, test = data[:train_size], data[train_size:]
+# ==========================
+data = load_dataset(os.path.join("data", "dataset.csv"))
 
 print("✅ Dataset Loaded Successfully!")
+train_size = int(len(data) * 0.8)
+train, test = data.iloc[:train_size], data.iloc[train_size:]
 print(f"Training size: {len(train)}, Testing size: {len(test)}")
 
-# Train ARIMA model
+# ==========================
+# ARIMA model
+# ==========================
 print("\n📈 Training ARIMA model...")
-arima_forecast, arima_model = train_arima(train['Sales'], steps=len(test))
-print("ARIMA model trained successfully!")
+arima_forecast, arima_model = train_arima(train['Sales'], test['Sales'])
+print("✅ ARIMA model trained successfully!")
 
-# Train SARIMA model
-print("\n📊 Training SARIMA model...")
+# ==========================
+# SARIMA model
+# ==========================
+print("\n🧠 Training SARIMA model...")
 sarima_forecast, sarima_model = train_sarima(train['Sales'], steps=len(test))
 
-print("SARIMA model trained successfully!")
+print("✅ SARIMA model trained successfully!")
 
-# Evaluate Models
-print("\n📉 Evaluating models...")
-metrics = evaluate_models(test['Sales'], arima_forecast, sarima_forecast)
-print(metrics)
+# ==========================
+# Evaluation
+# ==========================
+print("\n📉 Evaluating models...\n")
+results = evaluate_models(test['Sales'], arima_forecast, sarima_forecast)
+print("📊 Model Evaluation Results:\n", results)
 
-# Plot Graphs
-results_dir = "results"
-os.makedirs(results_dir, exist_ok=True)
+# ==========================
+# Visualization
+# ==========================
+os.makedirs("results", exist_ok=True)
+plot_forecasts(train, test, arima_forecast, sarima_forecast, "results/")
 
-plot_forecasts(train, test, arima_forecast, sarima_forecast, save_dir=results_dir)
-
-print("\n✅ Forecasting Completed! Check the 'results' folder for graphs and metrics.")
+print("\n✅ Forecasting Completed! Check 'results' folder for graphs.")
